@@ -18,16 +18,21 @@ You should have received a copy of the GNU General Public License along with
 */
 package in.shick.lockpatterngenerator;
 
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.text.Html;
+import android.text.Spannable;
 import android.text.method.LinkMovementMethod;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
 
 import java.io.InputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TextWallActivity extends BaseActivity
 {
@@ -63,8 +68,49 @@ public class TextWallActivity extends BaseActivity
         }
 
         textWall.setText(Html.fromHtml(wallText));
-        textWall.setMovementMethod(LinkMovementMethod.getInstance());
+        textWall.setMovementMethod(new SafeLinkMovementMethod());
+        //textWall.setMovementMethod(SafeLinkMovementMethod.getInstance());
         textWall.setClickable(false);
         textWall.setLongClickable(false);
+    }
+
+    /** Simple extension to LinkMovementMethod that eats
+     * ActivityNotFoundExceptions.  Specifically handles bitcoin URIs more
+     * gracefully.  Hackily implemented with exception flow control and
+     * Throwable message matching.
+     */
+    protected class SafeLinkMovementMethod extends LinkMovementMethod
+    {
+        protected Pattern addressPattern;
+
+        public SafeLinkMovementMethod()
+        {
+            super();
+            addressPattern = Pattern.compile(
+                    ".*dat=bitcoin:([13][1-9A-HJ-Za-km-z]{20,40}).*");
+        }
+
+        @Override
+        public boolean onTouchEvent(TextView widget, Spannable text,
+                MotionEvent event) {
+            try
+            {
+                return super.onTouchEvent(widget, text, event);
+            }
+            catch(ActivityNotFoundException e)
+            {
+                Matcher addressMatcher = addressPattern.matcher(e.getMessage());
+                if(addressMatcher.matches())
+                {
+                    new BitcoinAddressDialogBuilder(TextWallActivity.this,
+                            addressMatcher.group(1)).build().show();
+                }
+                else
+                {
+                    throw e;
+                }
+                return true;
+            }
+        }
     }
 }
