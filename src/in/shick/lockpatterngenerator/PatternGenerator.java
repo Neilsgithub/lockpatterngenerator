@@ -133,7 +133,7 @@ public class PatternGenerator
     // Helper methods
     //
 
-    public int computeGcd(int a, int b)
+    public static int computeGcd(int a, int b)
     /* Implementation taken from
      * http://en.literateprograms.org/Euclidean_algorithm_(Java)
      * Accessed on 12/28/10

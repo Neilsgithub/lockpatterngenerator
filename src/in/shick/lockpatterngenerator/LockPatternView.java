@@ -296,6 +296,37 @@ public class LockPatternView extends View
                         mVibrator.vibrate(TACTILE_FEEDBACK_DURATION);
                     }
                     Point newPoint = new Point(mTouchCell);
+                    // did we skip over any nodes?  Include them first since
+                    // skipping over nodes isn't allowed
+                    int practicePatternLen = mPracticePattern.size();
+                    if(practicePatternLen > 0)
+                    {
+                        Point tail = mPracticePattern.get(practicePatternLen-1);
+                        Point delta = new Point(newPoint.x - tail.x,
+                                newPoint.y - tail.y);
+                        // TODO if we're using computeGcd here it probably
+                        // shouldn't be in PatternGenerator
+                        // TODO this 'find in-between nodes' business should
+                        // probably be factored out somewhere, possibly to the
+                        // same new home as computeGcd.
+                        int gcd = Math.abs(PatternGenerator.computeGcd(delta.x,
+                                    delta.y));
+                        if(gcd > 1)
+                        {
+                            for(int ii = 1; ii < gcd; ii++)
+                            {
+                                Point inside = new Point(
+                                        tail.x + delta.x / gcd * ii,
+                                        tail.y + delta.y / gcd * ii);
+                                if(!mPracticePool.contains(inside))
+                                {
+                                    appendPattern(mPracticePattern, inside);
+                                    mPracticePool.add(inside);
+                                }
+                            }
+                        }
+                    }
+
                     appendPattern(mPracticePattern, newPoint);
                     mPracticePool.add(newPoint);
                 }
